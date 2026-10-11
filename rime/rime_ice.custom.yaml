@@ -1,0 +1,8 @@
+# zh2en：雾凇拼音的补丁（不改 rime_ice.schema.yaml 原文件；删掉本文件即恢复雾凇默认）
+patch:
+  # 第 2 步：记录"这句话打到哪了"给浮窗看。放在最前面先看一眼，但从不拦截任何按键
+  engine/processors/@before 0: lua_processor@*sentence_tap
+
+  # 第 1 步：候选词后面加英文。放在所有过滤器最后，等雾凇排好序、去完重再加
+  engine/filters/+:
+    - lua_filter@*english_hint

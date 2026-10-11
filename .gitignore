@@ -1,0 +1,12 @@
+.DS_Store
+# 安装清单（每台电脑自己的）
+.installed
+# 编译产物
+helper/.build/
+# 词典：安装时现下载、现生成，不随仓库分发
+dict/cache/
+dict/cedict.tsv
+# 录屏原始文件
+*.mov
+# 安装时临时下载的鼠须管安装包
+.downloads/

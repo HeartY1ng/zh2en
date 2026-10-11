@@ -1,0 +1,42 @@
+# zh2en 可选外观：清透玻璃候选框（不改雾凇原文件；删掉本文件即恢复雾凇默认）
+# 颜色写法是 0xAABBGGRR：透明度、蓝、绿、红（注意顺序和网页上的 RGB 是反的）
+patch:
+  style/candidate_list_layout: linear   # 横排（雾凇默认 stacked 竖排）
+
+  # 毛玻璃外形
+  style/translucency: true              # 磨砂玻璃（背景色要半透明才看得到）
+  style/corner_radius: 14
+  style/hilited_corner_radius: 9
+  style/shadow_size: 6
+
+  # 清透配色：几乎无色的玻璃，只有英文释义用青绿色点一下
+  style/color_scheme: glass_clear
+  style/color_scheme_dark: glass_clear_dark
+
+  preset_color_schemes/glass_clear:
+    name: 清透
+    back_color: 0x4DFFFFFF                    # 白，约 30% 不透明 → 玻璃
+    border_color: 0x99E8E2E2                  # 浅灰描边
+    text_color: 0x786B6B                      # 拼音：灰
+    hilited_text_color: 0x281F1F              # 选中的拼音：近黑
+    candidate_text_color: 0x282828            # 候选字：深灰
+    label_color: 0x968A8A                     # 序号：浅灰
+    comment_text_color: 0x808F0F              # 注释（第 1 步的英文就显示在这）：青绿
+    hilited_candidate_back_color: 0xCCFFFFFF  # 选中项：一块更亮的白玻璃
+    hilited_candidate_text_color: 0x281F1F
+    hilited_candidate_label_color: 0x968A8A
+    hilited_comment_text_color: 0x808F0F
+
+  preset_color_schemes/glass_clear_dark:
+    name: 清透·暗
+    back_color: 0x591C1C1E                    # 深灰，约 35% 不透明 → 暗色玻璃
+    border_color: 0x99554A4A                  # 深灰描边
+    text_color: 0xAAA0A0                      # 拼音：浅灰
+    hilited_text_color: 0xF5F0F0
+    candidate_text_color: 0xF0EBEB            # 候选字：近白
+    label_color: 0x998E8E                     # 序号：灰
+    comment_text_color: 0xC4D65E              # 注释：亮青绿
+    hilited_candidate_back_color: 0x38FFFFFF  # 选中项：淡淡一层白
+    hilited_candidate_text_color: 0xFFFFFF
+    hilited_candidate_label_color: 0xBEB4B4
+    hilited_comment_text_color: 0xD8E87F
