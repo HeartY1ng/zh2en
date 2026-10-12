@@ -277,6 +277,11 @@ final class BubblePanel {
     private var shown = false
     var isShown: Bool { shown }
     private var dragStart: (mouse: NSPoint, origin: NSPoint)?
+    /// 点了浮窗外面的任何地方（别的程序的窗口、桌面……）
+    var onClickOutside: (() -> Void)?
+    private var clickMonitor: Any?
+    /// 现在不该自动收起：鼠标真的在浮窗上，或者正在拖
+    var holdsOpen: Bool { dragStart != nil || (shown && panel.frame.contains(NSEvent.mouseLocation)) }
 
     /// recordable: 演示模式下允许被录屏（平时不出现在截图和屏幕共享里）
     init(recordable: Bool = false) {
@@ -298,6 +303,15 @@ final class BubblePanel {
         panel.alphaValue = 0
         model.onDragChanged = { [weak self] in self?.dragChanged() }
         model.onDragEnded = { [weak self] in self?.dragEnded() }
+        // 全局鼠标监听只收得到"点在别的程序上"的事件；点浮窗本身不会触发。监听鼠标不需要辅助功能权限
+        if !recordable {
+            clickMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown, .otherMouseDown]) { [weak self] _ in
+                MainActor.assumeIsolated {
+                    guard let self, self.shown, self.dragStart == nil else { return }
+                    self.onClickOutside?()
+                }
+            }
+        }
     }
 
     /// 拖动：用屏幕坐标算位移（窗口自己在动，用窗口内坐标会抖）

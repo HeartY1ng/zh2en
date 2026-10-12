@@ -36,6 +36,8 @@ final class Controller {
     private var translated = ""          // 已经直译过的中文（同样的不再翻）
     private var finishedSid = -1         // 已经收尾过的句子
     private var committedCount = 0       // 已上屏几个字（变多了就扫一道反光）
+    private var fullText = ""            // 这句话到目前为止的完整原文（Lua 写来的）
+    private var dismissed: (sid: Int, text: String)?   // 点浮窗外面关掉时，这句已经打了什么
     private var debounce: Task<Void, Never>?
     private var hideTask: Task<Void, Never>?
 
@@ -54,6 +56,7 @@ final class Controller {
             Settings.localOnly.toggle()
             self?.modeChanged()
         }
+        bubble.onClickOutside = { [weak self] in self?.dismiss() }
         feed.onChange = { [weak self] s in self?.handle(s) }
         feed.start()
     }
@@ -81,7 +84,14 @@ final class Controller {
             committedCount = 0
             m.cloudAvailable = cloudAvailable   // 每句开头看一眼：中途补配了 key 也能马上用上
         }
-        let text = s.text
+        fullText = s.text
+        var text = s.text
+        if let d = dismissed {   // 点外面关掉过：同一句里只显示关掉之后新打的字
+            if d.sid != s.sid { dismissed = nil }
+            else if text.hasPrefix(d.text) { text = String(text.dropFirst(d.text.count)).trimmingCharacters(in: .whitespaces) }
+            else if d.text.hasPrefix(text) { text = "" }   // 在旧内容里退格：保持收起
+            else { dismissed = nil }
+        }
         guard Privacy.hasChinese(text) else {   // 删光了 / 作废了 / 根本不是中文
             if !text.isEmpty { flowLog.notice("skip: no Chinese") }
             debounce?.cancel()
@@ -94,7 +104,7 @@ final class Controller {
         bubble.show()
         if s.committed.count > committedCount && !s.done { bubble.typedSheen() }   // 上屏了新字：反光掠过
         committedCount = s.committed.count
-        if !s.done { scheduleHide(after: 20) }          // 打了一半去干别的了：20 秒后收起
+        if !s.done { scheduleHide(after: 10) }          // 打了一半去干别的了：10 秒后收起
 
         debounce?.cancel()
         debounce = Task { [weak self] in
@@ -157,10 +167,21 @@ final class Controller {
         hideTask?.cancel()
         hideTask = Task { [weak self] in
             try? await Task.sleep(for: .seconds(seconds))
-            while !Task.isCancelled, self?.m.hovering == true { try? await Task.sleep(for: .milliseconds(400)) }
+            // 鼠标在浮窗上（直接问鼠标的实际位置，不靠可能卡住的标记）或者正在拖：先不收
+            while !Task.isCancelled, self?.bubble.holdsOpen == true { try? await Task.sleep(for: .milliseconds(400)) }
             guard !Task.isCancelled else { return }
             self?.hideNow()
         }
+    }
+
+    /// 点了浮窗外面：马上收起；这句之后接着打的字照常显示
+    private func dismiss() {
+        guard bubble.isShown else { return }
+        dismissed = (sid, fullText)   // 记下完整原文：之后只显示比它多出来的部分
+        debounce?.cancel()
+        hideTask?.cancel()
+        flowLog.notice("dismissed by click outside")
+        hideNow()
     }
 
     /// 收起浮窗，同时删掉状态文件
